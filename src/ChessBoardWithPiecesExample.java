@@ -1,6 +1,6 @@
-import javax.swing.*;
 import java.awt.*;
 import java.awt.event.*;
+import javax.swing.*;
 
 
 /**
@@ -20,6 +20,7 @@ public class ChessBoardWithPiecesExample {
     private JLabel floatingPieceLabel;                   // Temporary label for dragging a piece
     private Point dragOffset;                            // Offset for dragging
     private boolean dragging = false;                    // Indicates if a piece is being dragged
+    private boolean selected = false;                    // Indicates if a piece has been selected
     private final Color highlightColor = Color.LIGHT_GRAY; // Color for selected square
     private final Color originalLightColor = new Color(240, 217, 181); // Light square color
     private final Color originalDarkColor = new Color(181, 136, 99);   // Dark square color
@@ -101,6 +102,18 @@ public class ChessBoardWithPiecesExample {
         @Override
         public void mousePressed(MouseEvent e) {
             JPanel sourceSquare = (JPanel) e.getComponent();
+
+            if(selected){ // piece is already selected and we click on a square
+                if(sourceSquare != selectedSquarePanel){
+                    performMove(sourceSquare);
+                }
+                // Reset selection
+                resetSquareColor(selectedSquarePanel);
+                selected = false;
+                selectedPieceLabel = null;
+                selectedSquarePanel = null;
+            }
+            else{
             if (sourceSquare.getComponentCount() > 0) {  // Square has a piece
                 selectedPieceLabel = (JLabel) sourceSquare.getComponent(0);
                 selectedSquarePanel = sourceSquare;
@@ -109,14 +122,15 @@ public class ChessBoardWithPiecesExample {
                 sourceSquare.setBackground(highlightColor);
 
                 // Prepare for dragging
-                floatingPieceLabel = new JLabel(selectedPieceLabel.getText());
-                floatingPieceLabel.setFont(new Font("Serif", Font.BOLD, 64));
-                floatingPieceLabel.setSize(selectedPieceLabel.getSize());
+                 floatingPieceLabel = new JLabel(selectedPieceLabel.getText());
+                 floatingPieceLabel.setFont(new Font("Serif", Font.BOLD, 64));
+                 floatingPieceLabel.setSize(selectedPieceLabel.getSize());
 
                 // Calculate drag offset
-                dragOffset = SwingUtilities.convertPoint(sourceSquare, e.getPoint(), floatingPieceLabel);
-                dragging = false;  // Dragging not yet active
-
+                  dragOffset = SwingUtilities.convertPoint(sourceSquare, e.getPoint(), floatingPieceLabel);
+                  dragging = false;  // Dragging not yet active
+                  selected = true;
+             }
             }
         }
 
@@ -164,55 +178,59 @@ public class ChessBoardWithPiecesExample {
          */
         @Override
         public void mouseReleased(MouseEvent e) {
-            if (selectedPieceLabel != null && selectedSquarePanel != null) {
-                // Retrieve the frame and layered pane
-                JFrame frame = (JFrame) SwingUtilities.getWindowAncestor(selectedSquarePanel);
-                JLayeredPane layeredPane = frame.getLayeredPane();
+            if (dragging){ // case for drag and release
+                if (selectedPieceLabel != null && selectedSquarePanel != null) {
+                    // Retrieve the frame and layered pane
+                    JFrame frame = (JFrame) SwingUtilities.getWindowAncestor(selectedSquarePanel);
+                    JLayeredPane layeredPane = frame.getLayeredPane();
 
-                // Calculate the center point of the floating label
-                Point releaseLocation = floatingPieceLabel.getLocation();
-                int centerX = releaseLocation.x + floatingPieceLabel.getWidth() / 2;
-                int centerY = releaseLocation.y + floatingPieceLabel.getHeight() / 2;
+                    // Calculate the center point of the floating label
+                    Point releaseLocation = floatingPieceLabel.getLocation();
+                    int centerX = releaseLocation.x + floatingPieceLabel.getWidth() / 2;
+                    int centerY = releaseLocation.y + floatingPieceLabel.getHeight() / 2;
 
-                // Find the closest square based on the center point of floating label
-                JPanel closestSquare = null;
-                double minDistance = Double.MAX_VALUE;
+                    // Find the closest square based on the center point of floating label
+                    JPanel closestSquare = null;
+                    double minDistance = Double.MAX_VALUE;
 
-                for (int row = 0; row < 8; row++) {
-                    for (int col = 0; col < 8; col++) {
-                        JPanel squarePanel = boardSquares[row][col];
-                        Point squareLocation = SwingUtilities.convertPoint(squarePanel, 0, 0, layeredPane);
+                    for (int row = 0; row < 8; row++) {
+                        for (int col = 0; col < 8; col++) {
+                            JPanel squarePanel = boardSquares[row][col];
+                            Point squareLocation = SwingUtilities.convertPoint(squarePanel, 0, 0, layeredPane);
 
-                        int squareCenterX = squareLocation.x + squarePanel.getWidth() / 2;
-                        int squareCenterY = squareLocation.y + squarePanel.getHeight() / 2;
+                            int squareCenterX = squareLocation.x + squarePanel.getWidth() / 2;
+                            int squareCenterY = squareLocation.y + squarePanel.getHeight() / 2;
 
-                        double distance = Point.distance(centerX, centerY, squareCenterX, squareCenterY);
-                        if (distance < minDistance) {
-                            minDistance = distance;
-                            closestSquare = squarePanel;
+                            double distance = Point.distance(centerX, centerY, squareCenterX, squareCenterY);
+                            if (distance < minDistance) {
+                               minDistance = distance;
+                              closestSquare = squarePanel;
+                            }
                         }
                     }
-                }
 
-                // Perform move to the closest square if it's different from the original
-                if (closestSquare != null && closestSquare != selectedSquarePanel) {
+                    // Perform move to the closest square if it's different from the original
+                    if (closestSquare != null && closestSquare != selectedSquarePanel) {
                     performMove(closestSquare);
-                } else {
-                    // Reset to the original square if no valid target is found
-                    selectedSquarePanel.add(selectedPieceLabel);
-                    selectedSquarePanel.revalidate();
-                    selectedSquarePanel.repaint();
+                    } else {
+                        // Reset to the original square if no valid target is found
+                        selectedSquarePanel.add(selectedPieceLabel);
+                        selectedSquarePanel.revalidate();
+                        selectedSquarePanel.repaint();
+                    }
+
+                    // Clear selection and remove floating piece label from layered pane
+                    layeredPane.remove(floatingPieceLabel);
+                    layeredPane.repaint();
+
+                    // Reset selection variables
+                    selectedPieceLabel = null;
+                    selectedSquarePanel = null;
+                    floatingPieceLabel = null;
+                    dragging = false;
                 }
-
-                // Clear selection and remove floating piece label from layered pane
-                layeredPane.remove(floatingPieceLabel);
-                layeredPane.repaint();
-
-                // Reset selection variables
-                selectedPieceLabel = null;
-                selectedSquarePanel = null;
-                floatingPieceLabel = null;
-                dragging = false;
+            }else{ // case for select and place 
+                
             }
         }
 
