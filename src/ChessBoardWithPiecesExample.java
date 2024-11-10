@@ -178,7 +178,7 @@ public class ChessBoardWithPiecesExample {
          */
         @Override
         public void mouseReleased(MouseEvent e) {
-            if (dragging){ // case for drag and release
+            if(dragging){
                 if (selectedPieceLabel != null && selectedSquarePanel != null) {
                     // Retrieve the frame and layered pane
                     JFrame frame = (JFrame) SwingUtilities.getWindowAncestor(selectedSquarePanel);
@@ -228,10 +228,10 @@ public class ChessBoardWithPiecesExample {
                     selectedSquarePanel = null;
                     floatingPieceLabel = null;
                     dragging = false;
+                    selected = false;
                 }
-            }else{ // case for select and place 
-                
             }
+            
         }
 
 
