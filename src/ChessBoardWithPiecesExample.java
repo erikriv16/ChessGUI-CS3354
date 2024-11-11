@@ -47,11 +47,13 @@ public class ChessBoardWithPiecesExample {
                 squarePanel.setBorder(BorderFactory.createLineBorder(Color.GRAY));
                 squarePanel.setBackground((row + col) % 2 == 0 ? originalLightColor : originalDarkColor);
 
-                JLabel pieceLabel = new JLabel(getPieceUnicode(row, col));  // Chess Peices
+                String pieceUnicode = getPieceUnicode(row, col);
+                if(!pieceUnicode.isEmpty()){ // ensuring only squares with pieces get JLabels
+                JLabel pieceLabel = new JLabel(pieceUnicode);  // Chess Peices
                 pieceLabel.setFont(new Font("Serif", Font.BOLD, 64));
                 pieceLabel.setHorizontalAlignment(SwingConstants.CENTER);
-
                 squarePanel.add(pieceLabel, BorderLayout.CENTER);
+                }
                 squarePanel.addMouseListener(pieceHandler);         // Attach the handler to each square
                 squarePanel.addMouseMotionListener(pieceHandler);   // Needed for drag events
 
