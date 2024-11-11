@@ -18,7 +18,8 @@ public class ChessBoardWithPiecesExample {
     private JPanel selectedSquarePanel;                  // Square of selected piece
     private JLabel selectedPieceLabel;                   // Label for the selected piece
     private JLabel floatingPieceLabel;                   // Temporary label for dragging a piece
-    private Point dragOffset;                            // Offset for dragging
+    private Point dragOffset;     
+    private Point mousePressPoint;                       // Offset for dragging
     private boolean dragging = false;                    // Indicates if a piece is being dragged
     private boolean selected = false;                    // Indicates if a piece has been selected
     private final Color highlightColor = Color.LIGHT_GRAY; // Color for selected square
@@ -102,6 +103,7 @@ public class ChessBoardWithPiecesExample {
         @Override
         public void mousePressed(MouseEvent e) {
             JPanel sourceSquare = (JPanel) e.getComponent();
+            mousePressPoint = e.getPoint();
 
             if(selected){ // piece is already selected and we click on a square
                 if(sourceSquare != selectedSquarePanel){
@@ -224,11 +226,25 @@ public class ChessBoardWithPiecesExample {
                     layeredPane.repaint();
 
                     // Reset selection variables
+                    resetSquareColor(selectedSquarePanel);
                     selectedPieceLabel = null;
                     selectedSquarePanel = null;
                     floatingPieceLabel = null;
                     dragging = false;
                     selected = false;
+                }
+            }else{ //case: click without dragging
+                //check if mouse mooved slightly but didnt trigger dragging
+                Point releasePoint = e.getPoint();
+                double distance = mousePressPoint.distance(releasePoint);
+                if (distance > 5){ // mouse moved slightly but not enough to set dragging true
+                    //resetting selection variables
+                    if(selectedSquarePanel != null){
+                        resetSquareColor(selectedSquarePanel);
+                    }
+                    selectedPieceLabel=null;
+                    selectedSquarePanel=null;
+                    selected=false;
                 }
             }
             
