@@ -1,9 +1,9 @@
 package ChessGame;
 
-import java.util.Arrays;
-import java.util.List;
 import ChessGame.pieces.*;
-import javax.swing.JOptionPane;
+
+import javax.swing.*;
+import java.util.List;
 
 
 /**
@@ -148,36 +148,29 @@ public class Board {
             return false;
         }
 
-        // Save the current board state
-        Piece targetPiece = pieces[toRow][toCol];
-        pieces[toRow][toCol] = movingPiece;
-        pieces[fromRow][fromCol] = null;
-
-        // Check if the move leaves the king in check
-        boolean kingInCheck = isKingInCheck(movingPiece.getColor());
-
-        // Revert the move
-        pieces[fromRow][fromCol] = movingPiece;
-        pieces[toRow][toCol] = targetPiece;
-
-        if (kingInCheck) {
-            System.out.println("DEBUG: Move leaves the king in check. Move is invalid.");
-            JOptionPane.showMessageDialog(null, "Your king is in check! You must move to escape check.", "Check", JOptionPane.WARNING_MESSAGE);
+        // Validate the move
+        List<String> validMoves = movingPiece.possibleMoves(pieces);
+        if (!validMoves.contains(to)) {
+            System.out.println("DEBUG: Invalid move for piece " + movingPiece.getClass().getSimpleName());
             return false;
         }
 
-        // If valid, make the move
+        // Proceed with the move
+        Piece targetPiece = pieces[toRow][toCol];
         pieces[toRow][toCol] = movingPiece;
         pieces[fromRow][fromCol] = null;
         movingPiece.setPosition(to);
 
-        // Check if the opposing king is now in check
-        String opponentColor = movingPiece.getColor().equals("white") ? "black" : "white";
-        if (isKingInCheck(opponentColor)) {
-            System.out.println("DEBUG: Opponent's king is in check.");
-            JOptionPane.showMessageDialog(null, opponentColor + "'s king is in check!", "Check", JOptionPane.WARNING_MESSAGE);
+        // Check for check condition and revert if necessary
+        boolean kingInCheck = isKingInCheck(movingPiece.getColor());
+        if (kingInCheck) {
+            pieces[fromRow][fromCol] = movingPiece;
+            pieces[toRow][toCol] = targetPiece;
+            System.out.println("DEBUG: Move leaves the king in check.");
+            return false;
         }
 
+        // Additional game state updates (e.g., switch turns) can follow here.
         return true;
     }
 
@@ -533,5 +526,24 @@ public class Board {
             System.out.println("DEBUG: No piece to move from " + from);
         }
     }
+
+//    /**
+//     * Checks if a square is occupied by an opponent's piece.
+//     *
+//     * @param row   the row index of the square.
+//     * @param col   the column index of the square.
+//     * @param board a 2D array representing the chessboard.
+//     * @return true if the square is occupied by an opponent's piece; false otherwise.
+//     */
+//    protected boolean isOpponentPiece(int row, int col, Piece[][] board) {
+//        if (board[row][col] == null) {
+//            return false; // No piece at the specified location
+//        }
+//
+//        boolean isOpponent = !board[row][col].getColor().equals(this.color);
+//        System.out.println("DEBUG: Checking opponent piece at (" + row + ", " + col + "): " +
+//                board[row][col].getColor() + " -> Opponent: " + isOpponent);
+//        return isOpponent;
+//    }
 
 }
