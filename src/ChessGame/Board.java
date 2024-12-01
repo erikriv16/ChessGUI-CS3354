@@ -226,7 +226,7 @@ public class Board {
         return null; // King not found (should not happen in a valid game)
     }
 
-    // ########### POSSIBLE REDUNDANCY W/ isValidMove FROM PIECE##########
+
     /**
      * Checks if a position is within the bounds of the chessboard.
      *
@@ -238,7 +238,6 @@ public class Board {
         return row >= 0 && row < 8 && col >= 0 && col < 8;
     }
 
-    // ##### POSSIBLE REDUNDANCY FROM PIECE - DETERMINE WHERE CODE SHOULD BE  #########
     /**
      * Converts board indices to chess notation (e.g., 0, 0 -> "A8").
      *
@@ -252,7 +251,6 @@ public class Board {
         return "" + file + rank;
     }
 
-    // ##### POSSIBLE REDUNDANCY FROM PIECE - DETERMINE WHERE CODE SHOULD BE  #########
     /**
      * Parses a position in chess notation (e.g., "A8") into row and column indices.
      *

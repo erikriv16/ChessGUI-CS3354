@@ -1,6 +1,7 @@
 package ChessGame;
 
 import ChessGame.pieces.Piece;
+import ChessGame.pieces.King;
 import javax.swing.*;
 import java.awt.*;
 import java.awt.event.MouseAdapter;
@@ -86,6 +87,8 @@ public class Game {
         System.out.println("DEBUG: Current turn is " + currentTurn);
         System.out.println("DEBUG: Requested move from " + from + " to " + to);
 
+        Piece movingPiece = board.getPieceAt(Board.parsePosition(from)[0], Board.parsePosition(from)[1]);
+
         if (board.movePiece(from, to)) {
             // Update GUI after a successful move
             int[] fromCoords = Board.parsePosition(from);
@@ -95,13 +98,28 @@ public class Game {
             // Display the updated board state
             board.displayBoard();
 
-            // Check game-ending conditions
+            // Check for check or checkmate
+            String opponentColor = currentTurn.equals("white") ? "black" : "white";
+            if (board.isKingInCheck(opponentColor)) {
+                if (board.isCheckmate(opponentColor)) {
+                    JOptionPane.showMessageDialog(null, opponentColor + "'s King is in Checkmate!", "Game Over", JOptionPane.INFORMATION_MESSAGE);
+                    board.notifyGameOver(currentTurn); // End the game with the current player as the winner
+                } else {
+                    JOptionPane.showMessageDialog(null, opponentColor + "'s King is in Check!", "Check", JOptionPane.WARNING_MESSAGE);
+                }
+            }
+
+            // Check other game-ending conditions (e.g., stalemate)
             checkGameEndingConditions();
 
             // Switch turns
             currentTurn = currentTurn.equals("white") ? "black" : "white";
             System.out.println("DEBUG: Turn switched to " + currentTurn);
         } else {
+            // If the move is invalid and the piece is a king, show a warning message
+            if (movingPiece instanceof King && board.isKingInCheck(movingPiece.getColor())) {
+                JOptionPane.showMessageDialog(null, "Invalid move! The king must move out of check.", "Invalid Move", JOptionPane.ERROR_MESSAGE);
+            }
             System.out.println("DEBUG: Move failed. Not switching turns.");
         }
     }
@@ -395,35 +413,5 @@ public class Game {
      */
     private int getCol(String position) {
         return position.charAt(0) - 'A';
-    }
-
-    // ##### POSSIBLE REDUNDANCY UNUSED CODE  #########
-    private void updateGUI(String from, String to) {
-        int fromRow = getRow(from);
-        int fromCol = getCol(from);
-        int toRow = getRow(to);
-        int toCol = getCol(to);
-
-        JLabel pieceLabel = (JLabel) boardSquares[fromRow][fromCol].getComponent(0);
-        boardSquares[fromRow][fromCol].remove(pieceLabel);
-        boardSquares[toRow][toCol].removeAll();
-        boardSquares[toRow][toCol].add(pieceLabel);
-
-        boardSquares[fromRow][fromCol].revalidate();
-        boardSquares[fromRow][fromCol].repaint();
-        boardSquares[toRow][toCol].revalidate();
-        boardSquares[toRow][toCol].repaint();
-    }
-
-    private void resetSquare() {
-        if (selectedSquarePanel != null && selectedPieceLabel != null) {
-            selectedSquarePanel.add(selectedPieceLabel);
-            selectedSquarePanel.revalidate();
-            selectedSquarePanel.repaint();
-        }
-        dragging = false;
-        selectedPieceLabel = null;
-        selectedSquarePanel = null;
-        floatingPieceLabel = null;
     }
 }
