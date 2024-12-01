@@ -25,6 +25,9 @@ public class ChessBoardWithPiecesExample {
     private final Color highlightColor = Color.LIGHT_GRAY; // Color for selected square
     private final Color originalLightColor = new Color(240, 217, 181); // Light square color
     private final Color originalDarkColor = new Color(181, 136, 99);   // Dark square color
+    private boolean isWhiteTurn = true;  // true for white's turn, false for black's turn
+    private static final int WHITE = 0;
+    private static final int BLACK = 1;
 
     /**
      * Initializes the chessboard GUI with pieces in their starting positions.
@@ -90,6 +93,78 @@ public class ChessBoardWithPiecesExample {
             };
         }
         return "";  // Empty square
+    }
+
+    /**
+     * Returns the color (WHITE or BLACK) of a piece based on its Unicode character
+     */
+    private int getPieceColor(String piece) {
+        // White pieces are in indices 0-5 of UNICODE_PIECES
+        for (int i = 0; i < 6; i++) {
+            if (UNICODE_PIECES[i].equals(piece)) return WHITE;
+        }
+        return BLACK;
+    }
+
+    /**
+     * Validates if a piece can move to the target position
+     */
+    private boolean isValidMove(int startRow, int startCol, int endRow, int endCol, String piece) {
+        // Get piece type and color
+        boolean isWhitePiece = getPieceColor(piece) == WHITE;
+        
+        // Basic piece movement rules
+        switch (piece) {
+            case "♔", "♚": // King
+                return Math.abs(endRow - startRow) <= 1 && Math.abs(endCol - startCol) <= 1;
+                
+            case "♕", "♛": // Queen
+                return isDiagonalMove(startRow, startCol, endRow, endCol) || 
+                       isHorizontalOrVerticalMove(startRow, startCol, endRow, endCol);
+                
+            case "♖", "♜": // Rook
+                return isHorizontalOrVerticalMove(startRow, startCol, endRow, endCol);
+                
+            case "♗", "♝": // Bishop
+                return isDiagonalMove(startRow, startCol, endRow, endCol);
+                
+            case "♘", "♞": // Knight
+                int rowDiff = Math.abs(endRow - startRow);
+                int colDiff = Math.abs(endCol - startCol);
+                return (rowDiff == 2 && colDiff == 1) || (rowDiff == 1 && colDiff == 2);
+                
+            case "♙", "♟": // Pawn
+                int direction = isWhitePiece ? 1 : -1;
+                boolean isFirstMove = (isWhitePiece && startRow == 1) || (!isWhitePiece && startRow == 6);
+                
+                // Normal move
+                if (startCol == endCol && endRow == startRow + direction && !haspiece(endRow, endCol)) {
+                    return true;
+                }
+                // First move - can move two squares
+                if (isFirstMove && startCol == endCol && endRow == startRow + (2 * direction) && 
+                    !haspiece(endRow, endCol) && !haspiece(startRow + direction, startCol)) {
+                    return true;
+                }
+                // Capture move
+                if (Math.abs(endCol - startCol) == 1 && endRow == startRow + direction && haspiece(endRow, endCol)) {
+                    return true;
+                }
+                return false;
+        }
+        return false;
+    }
+
+    private boolean haspiece(int row, int col) {
+        return boardSquares[row][col].getComponentCount() > 0;
+    }
+
+    private boolean isDiagonalMove(int startRow, int startCol, int endRow, int endCol) {
+        return Math.abs(endRow - startRow) == Math.abs(endCol - startCol);
+    }
+
+    private boolean isHorizontalOrVerticalMove(int startRow, int startCol, int endRow, int endCol) {
+        return startRow == endRow || startCol == endCol;
     }
 
     /**
@@ -260,31 +335,72 @@ public class ChessBoardWithPiecesExample {
          */
         // Helper method to move the piece to the target square and check for game-ending conditions
         private void performMove(JPanel targetSquare) {
-            // Check if the target square already has a piece
+            // Find coordinates of source and target squares
+            int[] sourceCoords = findSquareCoordinates(selectedSquarePanel);
+            int[] targetCoords = findSquareCoordinates(targetSquare);
+            
+            // Check if it's the correct player's turn
+            boolean isWhitePiece = getPieceColor(selectedPieceLabel.getText()) == WHITE;
+            if (isWhitePiece != isWhiteTurn) {
+                // Return piece to original square if wrong turn
+                selectedSquarePanel.add(selectedPieceLabel);
+                return;
+            }
+            
+            // Check if target square has a piece of the same color
+            if (targetSquare.getComponentCount() > 0) {
+                JLabel targetPiece = (JLabel) targetSquare.getComponent(0);
+                boolean isTargetWhite = getPieceColor(targetPiece.getText()) == WHITE;
+                
+                // If both pieces are the same color, cancel the move
+                if (isWhitePiece == isTargetWhite) {
+                    selectedSquarePanel.add(selectedPieceLabel);
+                    return;
+                }
+            }
+            
+            // Validate the move
+            if (!isValidMove(sourceCoords[0], sourceCoords[1], targetCoords[0], targetCoords[1], 
+                             selectedPieceLabel.getText())) {
+                // Return piece to original square if invalid move
+                selectedSquarePanel.add(selectedPieceLabel);
+                return;
+            }
+
+            // Capture logic
             if (targetSquare.getComponentCount() > 0) {
                 JLabel targetPiece = (JLabel) targetSquare.getComponent(0);
                 String pieceText = targetPiece.getText();
-
-                // Check if the captured piece is a King
+                
                 if (pieceText.equals("♔")) {
                     announceWinner("Black");
                 } else if (pieceText.equals("♚")) {
                     announceWinner("White");
                 }
-
-                // Remove the captured piece
                 targetSquare.remove(targetPiece);
             }
 
-            // Move the piece to the new square
+            // Move the piece
             targetSquare.removeAll();
             targetSquare.add(selectedPieceLabel);
-
-            // Reset the original square's color and clear dragging state
-            resetSquareColor(selectedSquarePanel);
-
+            
+            // Switch turns
+            isWhiteTurn = !isWhiteTurn;
+            
+            // Update UI
             targetSquare.revalidate();
             targetSquare.repaint();
+        }
+
+        private int[] findSquareCoordinates(JPanel square) {
+            for (int i = 0; i < 8; i++) {
+                for (int j = 0; j < 8; j++) {
+                    if (boardSquares[i][j] == square) {
+                        return new int[]{i, j};
+                    }
+                }
+            }
+            return new int[]{-1, -1};
         }
 
         /**
