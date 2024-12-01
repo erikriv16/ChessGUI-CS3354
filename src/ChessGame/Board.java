@@ -15,8 +15,7 @@ public class Board {
     private Piece[][] pieces = new Piece[8][8]; // The array representing the board
     private String currentPlayer = "white"; // "white" or "black"
     private final int SIZE = 8;
-    private boolean gameEnded = false;
-    private String gameEndReason = ""; // Reason for the game ending
+
 
     /**
      * Default constructor for the Board class.
@@ -459,91 +458,4 @@ public class Board {
         }
         return null; // Should not reach here if all piece types are covered
     }
-
-
-    // ##### POSSIBLE REDUNDANCY UNUSED CODE  #########
-    private boolean isSafeMove(String from, String to) {
-        int[] fromPos = parsePosition(from);
-        int[] toPos = parsePosition(to);
-
-        Piece movingPiece = pieces[fromPos[0]][fromPos[1]];
-        Piece capturedPiece = pieces[toPos[0]][toPos[1]];
-
-        pieces[toPos[0]][toPos[1]] = movingPiece;
-        pieces[fromPos[0]][fromPos[1]] = null;
-
-        boolean safe = !isKingInCheck(movingPiece.getColor());
-
-        pieces[fromPos[0]][fromPos[1]] = movingPiece;
-        pieces[toPos[0]][toPos[1]] = capturedPiece;
-
-        return safe;
-    }
-
-    public boolean isGameEnded() {
-        return false;
-    }
-
-    public String getCurrentPlayer() {
-        return currentPlayer;
-    }
-
-    public String getGameEndReason() {
-        return "Game Ended";
-    }
-
-    public Piece[][] getPieces() {
-        return pieces;
-    }
-
-    private void notifyCheck(String color) {
-        String message = color.equals("white") ? "White King is in Check!" : "Black King is in Check!";
-        System.out.println("DEBUG: " + message);
-
-        // Show a dialog box for notification
-        JOptionPane.showMessageDialog(null, message, "King in Check!", JOptionPane.WARNING_MESSAGE);
-    }
-
-    /**
-     * Updates the board after a move.
-     */
-    public void updateBoard(String from, String to) {
-        int[] fromPos = parsePosition(from);
-        int[] toPos = parsePosition(to);
-
-        int fromRow = fromPos[0];
-        int fromCol = fromPos[1];
-        int toRow = toPos[0];
-        int toCol = toPos[1];
-
-        Piece movingPiece = pieces[fromRow][fromCol];
-        if (movingPiece != null) {
-            pieces[toRow][toCol] = movingPiece; // Move the piece
-            pieces[fromRow][fromCol] = null;   // Clear the original square
-            movingPiece.setPosition(to);       // Update the piece's position
-            System.out.println("DEBUG: Updated board for move from " + from + " to " + to);
-        } else {
-            System.out.println("DEBUG: No piece to move from " + from);
-        }
-    }
-
-//    /**
-//     * Checks if a square is occupied by an opponent's piece.
-//     *
-//     * @param row   the row index of the square.
-//     * @param col   the column index of the square.
-//     * @param board a 2D array representing the chessboard.
-//     * @return true if the square is occupied by an opponent's piece; false otherwise.
-//     */
-//    protected boolean isOpponentPiece(int row, int col, Piece[][] board) {
-//        if (board[row][col] == null) {
-//            return false; // No piece at the specified location
-//        }
-//
-//        boolean isOpponent = !board[row][col].getColor().equals(this.color);
-//        System.out.println("DEBUG: Checking opponent piece at (" + row + ", " + col + "): " +
-//                board[row][col].getColor() + " -> Opponent: " + isOpponent);
-//        return isOpponent;
-//    }
-
 }
