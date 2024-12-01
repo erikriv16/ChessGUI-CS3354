@@ -1,7 +1,8 @@
 package ChessGame;
 
-import ChessGame.pieces.Piece;
 import ChessGame.pieces.King;
+import ChessGame.pieces.Piece;
+
 import javax.swing.*;
 import java.awt.*;
 import java.awt.event.MouseAdapter;
@@ -242,15 +243,6 @@ public class Game {
     }
 
     /**
-     * Retrieves the current player's turn.
-     *
-     * @return "white" if it's white's turn, "black" if it's black's turn.
-     */
-    public String getCurrentTurn() {
-        return currentTurn;
-    }
-
-    /**
      * Inner class to handle mouse interactions for moving chess pieces.
      * It listens for mouse events such as press, release, and drag, and updates
      * the board and GUI accordingly.
@@ -395,23 +387,4 @@ public class Game {
         return file + String.valueOf(rank);
     }
 
-    /**
-     * Converts a position in chess notation to the corresponding row index.
-     *
-     * @param position the position in chess notation (e.g., "E2").
-     * @return the row index (0-based).
-     */
-    private int getRow(String position) {
-        return 8 - Character.getNumericValue(position.charAt(1));
-    }
-
-    /**
-     * Converts a position in chess notation to the corresponding column index.
-     *
-     * @param position the position in chess notation (e.g., "E2").
-     * @return the column index (0-based).
-     */
-    private int getCol(String position) {
-        return position.charAt(0) - 'A';
-    }
 }
