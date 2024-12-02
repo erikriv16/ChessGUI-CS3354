@@ -2,11 +2,10 @@ package ChessGame;
 
 import ChessGame.pieces.King;
 import ChessGame.pieces.Piece;
-
-import javax.swing.*;
 import java.awt.*;
 import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
+import javax.swing.*;
 
 /**
  * The Game class manages the graphical user interface (GUI) and overall control of a chess game.
@@ -18,7 +17,11 @@ public class Game {
     private final JPanel[][] boardSquares = new JPanel[8][8];
     private final Color lightColor = new Color(240, 217, 181); // Light square color
     private final Color darkColor = new Color(181, 136, 99);   // Dark square color
+    private final Color highlightColor = Color.LIGHT_GRAY; // Color for selected square
     private boolean dragging = false;                          // Indicates if a piece is being dragged
+    private boolean selected = false;
+    private Point dragOffset;     
+    private Point mousePressPoint;
     private JLabel floatingPieceLabel;
     private JPanel selectedSquarePanel;
     private JLabel selectedPieceLabel;
@@ -259,22 +262,75 @@ public class Game {
             JPanel sourceSquare = (JPanel) e.getComponent();
             String position = getSquarePosition(sourceSquare);
 
-            Piece piece = board.getPieceAt(Board.parsePosition(position)[0], Board.parsePosition(position)[1]);
+           
+            if(selected){ // piece is already selected and we click on a square
+                if(sourceSquare != selectedSquarePanel){
+                    String fromPosition = getSquarePosition(selectedSquarePanel);
+                    executeMove(fromPosition, position);
+                }
+                // Reset selection
+                resetSquareColor(selectedSquarePanel);
+                selected = false;
+                selectedPieceLabel = null;
+                selectedSquarePanel = null;
+            }
+            else {
+                if(sourceSquare.getComponentCount()>0){
+                    Piece piece = board.getPieceAt(Board.parsePosition(position)[0], Board.parsePosition(position)[1]);
 
-            if (piece == null || !piece.getColor().equalsIgnoreCase(currentTurn)) {
-                System.out.println("DEBUG: Not the current player's turn.");
-                return;
+                    if (piece == null || !piece.getColor().equalsIgnoreCase(currentTurn)) {
+                    System.out.println("DEBUG: Not the current player's turn.");
+                    return;
+                    }
+                    selectedPieceLabel = (JLabel) sourceSquare.getComponent(0);
+                    selectedSquarePanel = sourceSquare;
+
+                    sourceSquare.setBackground(highlightColor);
+
+                    //prepare for dragging
+                    floatingPieceLabel = new JLabel(selectedPieceLabel.getText());
+                    floatingPieceLabel.setFont(new Font("Serif", Font.BOLD, 64));
+                    floatingPieceLabel.setSize(selectedPieceLabel.getSize());
+                    // Calculate drag offset
+                    dragOffset = SwingUtilities.convertPoint(sourceSquare, e.getPoint(), floatingPieceLabel);
+                    dragging = false;  // Dragging not yet active
+                    selected = true;
+
+                    System.out.println("DEBUG: Selected piece: " + selectedPieceLabel.getText());
+                }
+            }
+        }
+
+        /**
+         * Handles mouse drag events to update the location of the piece being dragged.
+         *
+         * @param e Mouse event triggered when the mouse is dragged.
+         */
+        @Override
+        public void mouseDragged(MouseEvent e) {
+            if (selectedPieceLabel != null && !dragging) {
+                dragging = true;
+
+                // Add the floating piece to the layered pane
+                JFrame frame = (JFrame) SwingUtilities.getWindowAncestor(selectedSquarePanel);
+                JLayeredPane layeredPane = frame.getLayeredPane();
+                layeredPane.add(floatingPieceLabel, JLayeredPane.DRAG_LAYER);
             }
 
-            selectedPieceLabel = (JLabel) sourceSquare.getComponent(0);
-            selectedSquarePanel = sourceSquare;
+            // Update the location of the floating piece label to follow the cursor
+            if (dragging) {
+                JFrame frame = (JFrame) SwingUtilities.getWindowAncestor(e.getComponent());
+                JLayeredPane layeredPane = frame.getLayeredPane();
 
-            floatingPieceLabel = new JLabel(selectedPieceLabel.getText());
-            floatingPieceLabel.setFont(new Font("Serif", Font.BOLD, 64));
-            floatingPieceLabel.setSize(selectedPieceLabel.getSize());
-            dragging = true;
+                Point locationOnScreen = e.getLocationOnScreen();
+                Point locationOnLayeredPane = SwingUtilities.convertPoint(e.getComponent(),
+                        locationOnScreen.x - dragOffset.x,
+                        locationOnScreen.y - dragOffset.y,
+                        layeredPane);
 
-            System.out.println("DEBUG: Selected piece: " + selectedPieceLabel.getText());
+                floatingPieceLabel.setLocation(locationOnLayeredPane);
+                floatingPieceLabel.repaint();
+            }
         }
 
         /**
@@ -286,7 +342,9 @@ public class Game {
         @Override
         public void mouseReleased(MouseEvent e) {
             if (dragging) {
+                if (selectedPieceLabel != null && selectedSquarePanel != null) {
                 JPanel targetSquare = findClosestSquare(e.getLocationOnScreen());
+                JLayeredPane layeredPane = frame.getLayeredPane();
                 if (targetSquare != null && selectedSquarePanel != targetSquare) {
                     String from = getSquarePosition(selectedSquarePanel);
                     String to = getSquarePosition(targetSquare);
@@ -295,15 +353,23 @@ public class Game {
                     executeMove(from, to);
                 } else {
                     System.out.println("DEBUG: Invalid drop location or no movement detected.");
-                    resetSquare();
                 }
 
+                // Clear selection and remove floating piece label from layered pane
+                layeredPane.remove(floatingPieceLabel);
+                layeredPane.repaint();
+
+                resetSquareColor(selectedSquarePanel);
                 dragging = false;
+                selected = false;
                 selectedPieceLabel = null;
                 selectedSquarePanel = null;
                 floatingPieceLabel = null;
+            
+                }
             }
         }
+        
 
         /**
          * Finds the closest square to the given point on the screen.
@@ -371,6 +437,21 @@ public class Game {
             selectedPieceLabel = null;
             selectedSquarePanel = null;
             floatingPieceLabel = null;
+        }
+        private void resetSquareColor(JPanel square) {
+            int row = -1, col = -1;
+            for (int i = 0; i < 8; i++) {
+                for (int j = 0; j < 8; j++) {
+                    if (boardSquares[i][j] == square) {
+                        row = i;
+                        col = j;
+                        break;
+                    }
+                }
+            }
+            if (row != -1 && col != -1) {
+                square.setBackground((row + col) % 2 == 0 ? lightColor : darkColor);
+            }
         }
     }
 
