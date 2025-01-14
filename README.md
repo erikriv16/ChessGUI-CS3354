@@ -8,7 +8,7 @@
   - Nicolas Grabner
   - Erik Rivera
   - Landry Porter
-- 
+ 
 - Semester: Fall 2024
 - Course Number and Section: CS3354 - Section 003
 
